@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Session Key Manager - 设置</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #faf9f5;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 15px;
+        }
+
+        .tokens-container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+        }
+
+        .token-form {
+            display: grid;
+            grid-template-columns: 1fr 2fr auto;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .token-form input {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .token-form button {
+            padding: 10px 15px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .token-form button:hover {
+            background-color: #218838;
+        }
+
+        .token-list {
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+        }
+
+        .token-item {
+            display: grid;
+            grid-template-columns: 1fr 2fr auto;
+            gap: 10px;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .token-item:last-child {
+            border-bottom: none;
+        }
+
+        .token-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .token-name {
+            font-weight: bold;
+        }
+
+        .token-key {
+            font-family: monospace;
+            background-color: #f5f5f5;
+            padding: 5px 8px;
+            border-radius: 3px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .token-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .edit-button,
+        .delete-button {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .edit-button {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .edit-button:hover {
+            background-color: #0069d9;
+        }
+
+        .delete-button {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .delete-button:hover {
+            background-color: #c82333;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 30px 0;
+            color: #666;
+        }
+
+        .footer-note {
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            margin-top: 20px;
+        }
+
+        .save-success {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Claude Session Key Manager</h1>
+
+    <div id="saveSuccess" class="save-success">
+        保存成功!
+    </div>
+
+    <div class="tokens-container">
+        <h2>管理令牌</h2>
+
+        <div class="token-form">
+            <input type="text" id="tokenName" placeholder="名称（如: Claude Pro）" />
+            <input type="text" id="tokenKey" placeholder="会话密钥 (sk-ant-...)" />
+            <button id="addTokenButton">添加令牌</button>
+        </div>
+
+        <div id="tokenList" class="token-list">
+            <!-- 令牌列表将由JavaScript动态填充 -->
+            <div class="empty-state">加载中...</div>
+        </div>
+    </div>
+
+    <div class="footer-note">
+        所有令牌都安全地保存在您的浏览器中，不会上传到任何服务器。
+    </div>
+
+    <script src="options.js"></script>
+</body>
+
+</html>

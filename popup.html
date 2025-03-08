@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claude Session Key Manager</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            width: 300px;
+            padding: 15px;
+            background-color: #faf9f5;
+        }
+
+        h1 {
+            font-size: 18px;
+            color: #333;
+            margin-top: 0;
+            text-align: center;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .token-list {
+            margin-top: 15px;
+        }
+
+        .token-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: white;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            transition: all 0.2s ease;
+        }
+
+        .token-item:hover {
+            border-color: #007bff;
+            background-color: #f0f7ff;
+        }
+
+        .token-info {
+            flex-grow: 1;
+        }
+
+        .token-name {
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+
+        .token-time {
+            font-size: 11px;
+            color: #666;
+        }
+
+        .token-time span {
+            font-weight: bold;
+        }
+
+        .time-green {
+            color: green;
+        }
+
+        .time-red {
+            color: red;
+        }
+
+        .use-button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .use-button:hover {
+            background-color: #0069d9;
+        }
+
+        .options-link {
+            display: block;
+            text-align: center;
+            margin-top: 15px;
+            color: #007bff;
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .options-link:hover {
+            text-decoration: underline;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 20px 0;
+            color: #666;
+        }
+
+        .add-button {
+            display: block;
+            width: 100%;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .add-button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Claude Session Key Manager</h1>
+
+    <div id="tokenList" class="token-list">
+        <!-- 令牌列表将由JavaScript动态填充 -->
+        <div class="empty-state">加载中...</div>
+    </div>
+
+    <button id="addTokenButton" class="add-button">添加新令牌</button>
+
+    <a href="#" id="optionsLink" class="options-link">打开设置页面</a>
+
+    <script src="popup.js"></script>
+</body>
+
+</html>
