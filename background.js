@@ -1,10 +1,10 @@
 /*
  * @Author: xiawang1024
  * @Date: 2025-03-08 11:13:26
- * @LastEditTime: 2025-03-08 11:14:11
+ * @LastEditTime: 2025-03-08 15:43:44
  * @LastEditors: xiawang1024
  * @Description: 
- * @FilePath: /demo/background.js
+ * @FilePath: /claude-chrome/background.js
  * 工作，生活，健康
  */
 // 后台脚本，主要用于处理扩展生命周期事件和消息传递
@@ -51,5 +51,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
         sendResponse({ success: true });
         return true;
+    }
+
+    if (message.action === "openOptions") {
+        chrome.runtime.openOptionsPage();
     }
 });
