@@ -79,12 +79,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 const currentURL = tabs[0].url;
                 let loginUrl;
 
-                if (currentURL.startsWith('https://ccc.410183.xyz/')) {
-                    loginUrl = `https://ccc.410183.xyz/login_token?session_key=${key}`;
-                } else if (currentURL.startsWith('https://ccc.410183.xyz/')) {
-                    loginUrl = `https://ccc.410183.xyz/login_token?session_key=${key}`;
+                if (currentURL.startsWith('https://ccc.008778.xyz/')) {
+                    loginUrl = `https://ccc.008778.xyz/login_token?session_key=${key}`;
+                } else if (currentURL.startsWith('https://ccc.008778.xyz/')) {
+                    loginUrl = `https://ccc.008778.xyz/login_token?session_key=${key}`;
                 } else {
-                    loginUrl = `https://ccc.410183.xyz/login_token?session_key=${key}`;
+                    loginUrl = `https://ccc.008778.xyz/login_token?session_key=${key}`;
                 }
 
                 // 在当前标签页打开登录URL

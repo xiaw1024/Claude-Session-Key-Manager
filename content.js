@@ -305,12 +305,12 @@ function autoLogin(name, token) {
     const currentURL = window.location.href;
     let loginUrl;
 
-    if (currentURL.startsWith('https://ccc.410183.xyz/')) {
-        loginUrl = `https://ccc.410183.xyz/login_token?session_key=${token}`;
-    } else if (currentURL.startsWith('https://ccc.410183.xyz/')) {
-        loginUrl = `https://ccc.410183.xyz/login_token?session_key=${token}`;
+    if (currentURL.startsWith('https://ccc.008778.xyz/')) {
+        loginUrl = `https://ccc.008778.xyz/login_token?session_key=${token}`;
+    } else if (currentURL.startsWith('https://ccc.008778.xyz/')) {
+        loginUrl = `https://ccc.008778.xyz/login_token?session_key=${token}`;
     } else {
-        loginUrl = `https://ccc.410183.xyz/login_token?session_key=${token}`;
+        loginUrl = `https://ccc.008778.xyz/login_token?session_key=${token}`;
     }
 
     // 发送消息到后台脚本进行处理
