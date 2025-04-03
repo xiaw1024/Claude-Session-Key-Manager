@@ -10,7 +10,7 @@
         "identity.email"
     ],
     "oauth2": {
-        "client_id": "YOUR_CLIENT_ID",
+        "client_id": "399828137834-m9pe6cajomlglgokg60kjgrn55qehftp.apps.googleusercontent.com",
         "scopes": [
             "https://www.googleapis.com/auth/drive.file"
         ]
@@ -28,7 +28,8 @@
         "open_in_tab": true
     },
     "background": {
-        "service_worker": "background.js"
+        "service_worker": "background.js",
+        "type": "module"
     },
     "content_scripts": [
         {

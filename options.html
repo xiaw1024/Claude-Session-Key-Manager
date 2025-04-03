@@ -189,19 +189,35 @@
 
         .sync-status {
             margin-top: 10px;
-            padding: 10px;
+            padding: 12px;
             border-radius: 4px;
             display: none;
+            font-size: 14px;
+            text-align: center;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .sync-success {
             background-color: #d4edda;
             color: #155724;
+            border: 1px solid #c3e6cb;
         }
 
         .sync-error {
             background-color: #f8d7da;
             color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .sync-info {
+            background-color: #cce5ff;
+            color: #004085;
+            border: 1px solid #b8daff;
         }
     </style>
 </head>
@@ -245,8 +261,8 @@
         所有令牌都安全地保存在您的浏览器中，不会上传到任何服务器。
     </div>
 
-    <script src="sync.js"></script>
-    <script src="options.js"></script>
+    <script src="sync.js" type="module"></script>
+    <script src="options.js" type="module"></script>
 </body>
 
 </html>

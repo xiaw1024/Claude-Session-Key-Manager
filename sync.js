@@ -89,40 +89,56 @@ async function decryptData(encryptedData) {
 export async function syncToDrive() {
     try {
         // 获取当前存储的数据
-        const data = await chrome.storage.local.get(null);
-        
-        // 加密数据
-        const encryptedData = await encryptData(data);
-        
-        // 将加密后的数据转换为Blob
-        const blob = new Blob([JSON.stringify(encryptedData)], { type: 'application/json' });
-        
-        // 创建文件元数据
-        const metadata = {
-            name: 'claude_session_keys_backup.json',
-            mimeType: 'application/json'
-        };
-        
-        // 上传到Google Drive
-        const form = new FormData();
-        form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-        form.append('file', blob);
-        
-        const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${await getAuthToken()}`
-            },
-            body: form
+        return new Promise((resolve, reject) => {
+            chrome.storage.sync.get(null, async (data) => {
+                if (chrome.runtime.lastError) {
+                    console.error('获取存储数据失败:', chrome.runtime.lastError);
+                    reject(chrome.runtime.lastError);
+                    return;
+                }
+                
+                console.log('获取到本地数据:', data);
+                
+                // 加密数据
+                const encryptedData = await encryptData(data);
+                
+                // 将加密后的数据转换为Blob
+                const blob = new Blob([JSON.stringify(encryptedData)], { type: 'application/json' });
+                
+                // 创建文件元数据
+                const metadata = {
+                    name: 'claude_session_keys_backup.json',
+                    mimeType: 'application/json'
+                };
+                
+                // 上传到Google Drive
+                const form = new FormData();
+                form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+                form.append('file', blob);
+                
+                try {
+                    const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${await getAuthToken()}`
+                        },
+                        body: form
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('上传到Google Drive失败');
+                    }
+                    
+                    console.log('同步到Google Drive成功');
+                    resolve(true);
+                } catch (error) {
+                    console.error('同步失败:', error);
+                    reject(error);
+                }
+            });
         });
-        
-        if (!response.ok) {
-            throw new Error('Failed to upload to Google Drive');
-        }
-        
-        return true;
     } catch (error) {
-        console.error('Sync failed:', error);
+        console.error('同步失败:', error);
         return false;
     }
 }
@@ -130,6 +146,8 @@ export async function syncToDrive() {
 // 从Google Drive恢复数据
 export async function restoreFromDrive() {
     try {
+        console.log('开始从Google Drive恢复数据...');
+        
         // 获取文件列表
         const response = await fetch('https://www.googleapis.com/drive/v3/files?q=name%3D%27claude_session_keys_backup.json%27', {
             headers: {
@@ -138,8 +156,10 @@ export async function restoreFromDrive() {
         });
         
         const files = await response.json();
+        console.log('找到备份文件:', files);
+        
         if (!files.files || files.files.length === 0) {
-            throw new Error('No backup file found');
+            throw new Error('未找到备份文件');
         }
         
         // 下载文件
@@ -150,17 +170,37 @@ export async function restoreFromDrive() {
         });
         
         const encryptedData = await fileResponse.json();
+        console.log('获取到加密数据:', encryptedData);
         
         // 解密数据
         const decryptedData = await decryptData(encryptedData);
+        console.log('解密后的数据:', decryptedData);
         
         // 恢复数据到存储
-        await chrome.storage.local.clear();
-        await chrome.storage.local.set(decryptedData);
-        
-        return true;
+        return new Promise((resolve, reject) => {
+            // 先清除现有数据
+            chrome.storage.sync.clear(() => {
+                if (chrome.runtime.lastError) {
+                    console.error('清除存储失败:', chrome.runtime.lastError);
+                    reject(chrome.runtime.lastError);
+                    return;
+                }
+                
+                console.log('存储已清除，开始写入新数据...');
+                // 设置新数据
+                chrome.storage.sync.set(decryptedData, () => {
+                    if (chrome.runtime.lastError) {
+                        console.error('写入数据失败:', chrome.runtime.lastError);
+                        reject(chrome.runtime.lastError);
+                    } else {
+                        console.log('数据恢复成功');
+                        resolve(true);
+                    }
+                });
+            });
+        });
     } catch (error) {
-        console.error('Restore failed:', error);
+        console.error('恢复失败:', error);
         return false;
     }
 }

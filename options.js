@@ -1,3 +1,5 @@
+import { setEncryptionKey, syncToDrive, restoreFromDrive } from './sync.js';
+
 document.addEventListener('DOMContentLoaded', function () {
     const tokenNameInput = document.getElementById('tokenName');
     const tokenKeyInput = document.getElementById('tokenKey');
@@ -23,11 +25,18 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // 显示同步状态
-    function showSyncStatus(message, isError = false) {
+    function showSyncStatus(message, type = 'info') {
         syncStatus.textContent = message;
-        syncStatus.className = 'sync-status ' + (isError ? 'sync-error' : 'sync-success');
+        syncStatus.className = 'sync-status sync-' + type;
         syncStatus.style.display = 'block';
-        setTimeout(() => {
+        
+        // 清除之前的定时器
+        if (syncStatus.timeout) {
+            clearTimeout(syncStatus.timeout);
+        }
+        
+        // 设置新的定时器
+        syncStatus.timeout = setTimeout(() => {
             syncStatus.style.display = 'none';
         }, 5000);
     }
@@ -184,45 +193,52 @@ document.addEventListener('DOMContentLoaded', function () {
     setEncryptionKeyButton.addEventListener('click', async function() {
         const key = encryptionKeyInput.value.trim();
         if (!key) {
-            showSyncStatus('请输入加密密钥', true);
+            showSyncStatus('请输入加密密钥', 'error');
             return;
         }
         
         try {
             await setEncryptionKey(key);
-            showSyncStatus('加密密钥设置成功');
+            showSyncStatus('加密密钥设置成功', 'success');
             encryptionKeyInput.value = '';
         } catch (error) {
-            showSyncStatus('设置加密密钥失败: ' + error.message, true);
+            showSyncStatus('设置加密密钥失败: ' + error.message, 'error');
         }
     });
 
     // 同步到Google Drive
     syncToDriveButton.addEventListener('click', async function() {
         try {
+            showSyncStatus('正在同步到Google Drive...', 'info');
             const success = await syncToDrive();
             if (success) {
-                showSyncStatus('同步到Google Drive成功');
+                showSyncStatus('同步到Google Drive成功！数据已安全备份', 'success');
             } else {
-                showSyncStatus('同步到Google Drive失败', true);
+                showSyncStatus('同步到Google Drive失败，请重试', 'error');
             }
         } catch (error) {
-            showSyncStatus('同步失败: ' + error.message, true);
+            console.error('同步失败:', error);
+            showSyncStatus('同步失败: ' + error.message, 'error');
         }
     });
 
     // 从Google Drive恢复
     restoreFromDriveButton.addEventListener('click', async function() {
         try {
+            showSyncStatus('正在从Google Drive恢复数据...', 'info');
             const success = await restoreFromDrive();
             if (success) {
-                showSyncStatus('从Google Drive恢复成功');
-                loadTokens(); // 重新加载令牌列表
+                showSyncStatus('从Google Drive恢复成功！数据已更新', 'success');
+                // 延迟一下再重新加载令牌列表，确保数据已经写入
+                setTimeout(() => {
+                    loadTokens();
+                }, 1000);
             } else {
-                showSyncStatus('从Google Drive恢复失败', true);
+                showSyncStatus('从Google Drive恢复失败，请重试', 'error');
             }
         } catch (error) {
-            showSyncStatus('恢复失败: ' + error.message, true);
+            console.error('恢复失败:', error);
+            showSyncStatus('恢复失败: ' + error.message, 'error');
         }
     });
 
