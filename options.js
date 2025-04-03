@@ -5,6 +5,13 @@ document.addEventListener('DOMContentLoaded', function () {
     const tokenList = document.getElementById('tokenList');
     const saveSuccess = document.getElementById('saveSuccess');
 
+    // 同步相关元素
+    const encryptionKeyInput = document.getElementById('encryptionKey');
+    const setEncryptionKeyButton = document.getElementById('setEncryptionKey');
+    const syncToDriveButton = document.getElementById('syncToDrive');
+    const restoreFromDriveButton = document.getElementById('restoreFromDrive');
+    const syncStatus = document.getElementById('syncStatus');
+
     let editingIndex = -1; // 当前编辑的令牌索引，-1表示添加新令牌
 
     // 显示保存成功提示
@@ -13,6 +20,16 @@ document.addEventListener('DOMContentLoaded', function () {
         setTimeout(() => {
             saveSuccess.style.display = 'none';
         }, 3000);
+    }
+
+    // 显示同步状态
+    function showSyncStatus(message, isError = false) {
+        syncStatus.textContent = message;
+        syncStatus.className = 'sync-status ' + (isError ? 'sync-error' : 'sync-success');
+        syncStatus.style.display = 'block';
+        setTimeout(() => {
+            syncStatus.style.display = 'none';
+        }, 5000);
     }
 
     // 加载令牌列表
@@ -162,6 +179,52 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
     }
+
+    // 设置加密密钥
+    setEncryptionKeyButton.addEventListener('click', async function() {
+        const key = encryptionKeyInput.value.trim();
+        if (!key) {
+            showSyncStatus('请输入加密密钥', true);
+            return;
+        }
+        
+        try {
+            await setEncryptionKey(key);
+            showSyncStatus('加密密钥设置成功');
+            encryptionKeyInput.value = '';
+        } catch (error) {
+            showSyncStatus('设置加密密钥失败: ' + error.message, true);
+        }
+    });
+
+    // 同步到Google Drive
+    syncToDriveButton.addEventListener('click', async function() {
+        try {
+            const success = await syncToDrive();
+            if (success) {
+                showSyncStatus('同步到Google Drive成功');
+            } else {
+                showSyncStatus('同步到Google Drive失败', true);
+            }
+        } catch (error) {
+            showSyncStatus('同步失败: ' + error.message, true);
+        }
+    });
+
+    // 从Google Drive恢复
+    restoreFromDriveButton.addEventListener('click', async function() {
+        try {
+            const success = await restoreFromDrive();
+            if (success) {
+                showSyncStatus('从Google Drive恢复成功');
+                loadTokens(); // 重新加载令牌列表
+            } else {
+                showSyncStatus('从Google Drive恢复失败', true);
+            }
+        } catch (error) {
+            showSyncStatus('恢复失败: ' + error.message, true);
+        }
+    });
 
     // 添加/保存按钮点击事件
     addTokenButton.addEventListener('click', addToken);
