@@ -242,6 +242,11 @@ export async function restoreFromDrive() {
     try {
         console.log('开始从Google Drive恢复数据...');
         
+        // 检查加密密钥是否已设置
+        if (!encryptionKey) {
+            throw new Error('请先设置加密密钥');
+        }
+        
         // 获取认证令牌
         const token = await getAuthToken();
         

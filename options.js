@@ -289,27 +289,66 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         } catch (error) {
             console.error('同步失败:', error);
-            showSyncStatus('同步失败: ' + error.message, 'error');
+            let errorMessage = '同步失败: ';
+            
+            if (error.message.includes('API list call failed')) {
+                errorMessage += '无法连接到Google Drive API，请检查网络连接';
+            } else if (error.message.includes('API create call failed')) {
+                errorMessage += '无法创建备份文件，请检查Google Drive权限';
+            } else if (error.message.includes('API update call failed')) {
+                errorMessage += '无法更新备份文件，请检查Google Drive权限';
+            } else if (error.message.includes('getAuthToken')) {
+                errorMessage += 'Google账号授权失败，请重新授权';
+            } else if (error.message.includes('encryption')) {
+                errorMessage += '数据加密失败，请检查加密密钥';
+            } else {
+                errorMessage += error.message;
+            }
+            
+            showSyncStatus(errorMessage, 'error');
         }
     });
 
     // 从Google Drive恢复
-    restoreFromDriveButton.addEventListener('click', async function() {
+    restoreFromDriveButton.addEventListener('click', async function () {
         try {
+            // 检查是否已设置加密密钥
+            if (!encryptionKey) {
+                showSyncStatus('恢复失败：请先设置加密密钥', 'error');
+                return;
+            }
+
             showSyncStatus('正在从Google Drive恢复数据...', 'info');
             const success = await restoreFromDrive();
             if (success) {
-                showSyncStatus('从Google Drive恢复成功！数据已更新', 'success');
-                // 延迟一下再重新加载令牌列表，确保数据已经写入
-                setTimeout(() => {
-                    loadTokens();
-                }, 1000);
+                showSyncStatus('数据恢复成功！', 'success');
+                // 重新加载令牌和域名列表
+                loadTokens();
+                loadDomains();
             } else {
-                showSyncStatus('从Google Drive恢复失败，请重试', 'error');
+                showSyncStatus('数据恢复失败', 'error');
             }
         } catch (error) {
             console.error('恢复失败:', error);
-            showSyncStatus('恢复失败: ' + error.message, 'error');
+            let errorMessage = '恢复失败: ';
+            
+            if (error.message === '请先设置加密密钥') {
+                errorMessage = '恢复失败：加密密钥不能为空';
+            } else if (error.message.includes('未找到备份文件')) {
+                errorMessage = '恢复失败：未找到备份文件，请先进行同步';
+            } else if (error.message.includes('无法读取或解密备份文件')) {
+                errorMessage = '恢复失败：无法读取或解密备份文件，请检查加密密钥是否正确';
+            } else if (error.message.includes('API list call failed')) {
+                errorMessage = '恢复失败：无法连接到Google Drive API，请检查网络连接';
+            } else if (error.message.includes('getAuthToken')) {
+                errorMessage = '恢复失败：Google账号授权失败，请重新授权';
+            } else if (error.message.includes('decrypt')) {
+                errorMessage = '恢复失败：数据解密失败，请检查加密密钥是否正确';
+            } else {
+                errorMessage += error.message;
+            }
+            
+            showSyncStatus(errorMessage, 'error');
         }
     });
 
