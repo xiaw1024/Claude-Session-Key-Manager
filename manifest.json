@@ -16,9 +16,9 @@
         "https://*.anthropic.com/*"
     ],
     "oauth2": {
-        "client_id": "399828137834-m9pe6cajomlglgokg60kjgrn55qehftp.apps.googleusercontent.com",
+        "client_id": "84681234340-b5rtgtob1gbfaaf6gr7vtge31go3idfv.apps.googleusercontent.com",
         "scopes": [
-            "https://www.googleapis.com/auth/drive.file"
+            "https://www.googleapis.com/auth/drive.appdata"
         ]
     },
     "action": {

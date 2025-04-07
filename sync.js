@@ -85,6 +85,120 @@ async function decryptData(encryptedData) {
     return JSON.parse(decoder.decode(decryptedContent));
 }
 
+// 配置文件名称
+const CONFIG_FILE_NAME = 'claude_session_keys_backup.json';
+
+// 查找或创建配置文件
+async function findOrCreateConfigFile(token) {
+    const headers = new Headers({
+        'Authorization': `Bearer ${token}`
+    });
+
+    // 1. 尝试查找文件
+    const query = encodeURIComponent(`name='${CONFIG_FILE_NAME}'`);
+    const listUrl = `https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=${query}&fields=files(id,name)`;
+
+    try {
+        const response = await fetch(listUrl, { method: 'GET', headers: headers });
+        if (!response.ok) {
+            throw new Error(`API list call failed: ${response.statusText}`);
+        }
+        const data = await response.json();
+
+        if (data.files && data.files.length > 0) {
+            console.log("Config file found:", data.files[0].id);
+            return data.files[0].id; // 返回文件 ID
+        } else {
+            // 2. 文件未找到，创建文件
+            console.log("Config file not found, creating...");
+            const createUrl = 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
+            const metadata = {
+                name: CONFIG_FILE_NAME,
+                parents: ['appDataFolder'] // 指定在 App Data Folder 中创建
+            };
+            const initialConfig = {}; // 空配置
+
+            const form = new FormData();
+            form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+            form.append('file', new Blob([JSON.stringify(initialConfig, null, 2)], { type: 'application/json' }));
+
+            const createResponse = await fetch(createUrl, {
+                method: 'POST',
+                headers: headers, // 注意：Content-Type 由 FormData 自动设置
+                body: form
+            });
+
+            if (!createResponse.ok) {
+                throw new Error(`API create call failed: ${createResponse.statusText}`);
+            }
+            const newFile = await createResponse.json();
+            console.log("Config file created:", newFile.id);
+            return newFile.id;
+        }
+    } catch (error) {
+        console.error("Error finding or creating config file:", error);
+        throw error;
+    }
+}
+
+// 读取配置
+async function readConfig(token, fileId) {
+    const headers = new Headers({
+        'Authorization': `Bearer ${token}`
+    });
+    const downloadUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`;
+
+    try {
+        const response = await fetch(downloadUrl, { method: 'GET', headers: headers });
+        if (!response.ok) {
+            if (response.status === 404) return null; // 文件可能已被删除
+            throw new Error(`API download call failed: ${response.statusText}`);
+        }
+        const encryptedData = await response.json();
+        console.log("Config read successfully.");
+        
+        // 解密数据
+        if (encryptedData && encryptedData.salt && encryptedData.iv && encryptedData.data) {
+            return await decryptData(encryptedData);
+        }
+        return encryptedData; // 如果没有加密，直接返回
+    } catch (error) {
+        console.error("Error reading config file:", error);
+        throw error;
+    }
+}
+
+// 写入/更新配置
+async function writeConfig(token, fileId, configData) {
+    // 加密数据
+    const encryptedData = await encryptData(configData);
+    
+    const headers = new Headers({
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+    });
+    // 使用 media upload 来更新文件内容
+    const updateUrl = `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`;
+
+    try {
+        const response = await fetch(updateUrl, {
+            method: 'PATCH',
+            headers: headers,
+            body: JSON.stringify(encryptedData, null, 2)
+        });
+
+        if (!response.ok) {
+            throw new Error(`API update call failed: ${response.statusText}`);
+        }
+        const updatedFile = await response.json();
+        console.log("Config updated successfully:", updatedFile.id);
+        return updatedFile.id;
+    } catch (error) {
+        console.error("Error writing config file:", error);
+        throw error;
+    }
+}
+
 // 同步数据到Google Drive
 export async function syncToDrive() {
     try {
@@ -99,35 +213,15 @@ export async function syncToDrive() {
                 
                 console.log('获取到本地数据:', data);
                 
-                // 加密数据
-                const encryptedData = await encryptData(data);
-                
-                // 将加密后的数据转换为Blob
-                const blob = new Blob([JSON.stringify(encryptedData)], { type: 'application/json' });
-                
-                // 创建文件元数据
-                const metadata = {
-                    name: 'claude_session_keys_backup.json',
-                    mimeType: 'application/json'
-                };
-                
-                // 上传到Google Drive
-                const form = new FormData();
-                form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-                form.append('file', blob);
-                
                 try {
-                    const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${await getAuthToken()}`
-                        },
-                        body: form
-                    });
+                    // 获取认证令牌
+                    const token = await getAuthToken();
                     
-                    if (!response.ok) {
-                        throw new Error('上传到Google Drive失败');
-                    }
+                    // 查找或创建配置文件
+                    const fileId = await findOrCreateConfigFile(token);
+                    
+                    // 写入配置
+                    await writeConfig(token, fileId, data);
                     
                     console.log('同步到Google Drive成功');
                     resolve(true);
@@ -148,12 +242,24 @@ export async function restoreFromDrive() {
     try {
         console.log('开始从Google Drive恢复数据...');
         
-        // 获取文件列表
-        const response = await fetch('https://www.googleapis.com/drive/v3/files?q=name%3D%27claude_session_keys_backup.json%27', {
+        // 获取认证令牌
+        const token = await getAuthToken();
+        
+        // 查找配置文件
+        const query = encodeURIComponent(`name='${CONFIG_FILE_NAME}'`);
+        const listUrl = `https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=${query}&fields=files(id,name)`;
+        
+        const response = await fetch(listUrl, {
             headers: {
-                'Authorization': `Bearer ${await getAuthToken()}`
+                'Authorization': `Bearer ${token}`
             }
         });
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('搜索文件失败详情:', errorData);
+            throw new Error('搜索文件失败: ' + (errorData.error?.message || '未知错误'));
+        }
         
         const files = await response.json();
         console.log('找到备份文件:', files);
@@ -162,18 +268,14 @@ export async function restoreFromDrive() {
             throw new Error('未找到备份文件');
         }
         
-        // 下载文件
-        const fileResponse = await fetch(`https://www.googleapis.com/drive/v3/files/${files.files[0].id}?alt=media`, {
-            headers: {
-                'Authorization': `Bearer ${await getAuthToken()}`
-            }
-        });
+        // 读取配置
+        const fileId = files.files[0].id;
+        const decryptedData = await readConfig(token, fileId);
         
-        const encryptedData = await fileResponse.json();
-        console.log('获取到加密数据:', encryptedData);
+        if (!decryptedData) {
+            throw new Error('无法读取或解密备份文件');
+        }
         
-        // 解密数据
-        const decryptedData = await decryptData(encryptedData);
         console.log('解密后的数据:', decryptedData);
         
         // 恢复数据到存储
