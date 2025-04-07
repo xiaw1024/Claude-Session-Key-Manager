@@ -425,3 +425,14 @@ document.addEventListener('DOMContentLoaded', function () {
     // 初始加载域名列表
     loadDomains();
 });
+
+// 建议在 background.js 中添加
+function logSecurityEvent(event) {
+    const log = {
+        timestamp: Date.now(),
+        event: event,
+        user: chrome.identity.getProfileUserInfo()
+    };
+    // 存储安全日志
+    chrome.storage.local.set({ securityLog: log });
+}
