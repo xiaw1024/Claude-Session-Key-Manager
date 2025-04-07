@@ -9,16 +9,23 @@ const createElem = (tag, styles) => {
 
 // 获取保存的位置
 let buttonPosition = { left: 10, bottom: 10 };
-chrome.storage.sync.get(['buttonPosition'], function (result) {
-    if (result.buttonPosition) {
-        buttonPosition = result.buttonPosition;
-        initializeUI();
-    } else {
-        // 设置默认位置为右下角，距离边缘30px
-        buttonPosition = {
-            left: window.innerWidth - 74, // 44px按钮宽度 + 30px边距
-            bottom: 30
-        };
+
+// 检查当前域名是否在允许列表中
+chrome.storage.sync.get(['domains', 'buttonPosition'], function(result) {
+    const domains = result.domains || [];
+    const currentDomain = window.location.hostname;
+    
+    // 只有当当前域名在允许列表中时才初始化UI
+    if (domains.some(domain => currentDomain === domain)) {
+        if (result.buttonPosition) {
+            buttonPosition = result.buttonPosition;
+        } else {
+            // 设置默认位置为右下角，距离边缘30px
+            buttonPosition = {
+                left: window.innerWidth - 74, // 44px按钮宽度 + 30px边距
+                bottom: 30
+            };
+        }
         initializeUI();
     }
 });

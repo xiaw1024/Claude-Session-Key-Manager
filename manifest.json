@@ -9,6 +9,9 @@
         "identity",
         "identity.email"
     ],
+    "host_permissions": [
+        "*://*/*"
+    ],
     "oauth2": {
         "client_id": "399828137834-m9pe6cajomlglgokg60kjgrn55qehftp.apps.googleusercontent.com",
         "scopes": [
@@ -33,9 +36,7 @@
     },
     "content_scripts": [
         {
-            "matches": [
-                "<all_urls>"
-            ],
+            "matches": ["*://*/*"],
             "js": [
                 "content.js"
             ]

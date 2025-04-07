@@ -335,7 +335,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         // 简单的域名格式验证
-        if (!/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$/.test(domain)) {
+        if (!/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9](\.[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9])*\.[a-zA-Z]{2,}$/.test(domain)) {
             alert('请输入有效的域名格式');
             return;
         }
