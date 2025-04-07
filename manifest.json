@@ -2,8 +2,7 @@
     "manifest_version": 3,
     "name": "Claude Session Key Manager",
     "version": "1.0",
-    "description": "管理和切换Claude会话密钥",
-    "key":"nledmdnbpnfaecadmfdjjcjohhkpphck",
+    "description": "管理和切换Claude会话密钥",    
     "permissions": [
         "storage",
         "activeTab",
