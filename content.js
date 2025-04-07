@@ -11,10 +11,10 @@ const createElem = (tag, styles) => {
 let buttonPosition = { left: 10, bottom: 10 };
 
 // 检查当前域名是否在允许列表中
-chrome.storage.sync.get(['domains', 'buttonPosition'], function(result) {
+chrome.storage.sync.get(['domains', 'buttonPosition'], function (result) {
     const domains = result.domains || [];
     const currentDomain = window.location.hostname;
-    
+
     // 只有当当前域名在允许列表中时才初始化UI
     if (domains.some(domain => currentDomain === domain)) {
         if (result.buttonPosition) {
@@ -200,6 +200,10 @@ function initializeUI() {
 
     dropdownContainer.appendChild(gridContainer);
 
+    // 将 updateTokenCards 移到 initializeUI 外部，以便监听器可以调用
+    // （假设 updateTokenCards 内部会查找 gridContainer）
+    // 注意：实际的 updateTokenCards 函数定义需要移到 initializeUI 外面
+
     // 添加信息部分
     const infoSection = createElem('div', {
         marginTop: '15px',
@@ -311,13 +315,13 @@ function initializeUI() {
         // 确保按钮始终在右侧
         toggleButton.style.right = '10px';
         toggleButton.style.left = 'auto';
-        
+
         // 更新保存的位置
         buttonPosition = {
             right: 10,
             bottom: buttonBottom
         };
-        
+
         // 保存新的位置到存储
         chrome.storage.sync.set({
             buttonPosition: buttonPosition
@@ -342,14 +346,163 @@ function autoLogin(name, token) {
     let loginUrl;
 
     // 获取域名列表
-    chrome.storage.sync.get(['domains'], function(result) {
+    chrome.storage.sync.get(['domains'], function (result) {
         const domains = result.domains || []; // 移除默认域名
         const currentDomain = new URL(currentURL).hostname;
-        
+
         // 检查当前域名是否在允许列表中
         if (domains.some(domain => currentDomain === domain)) {
             loginUrl = `${currentURL.split('/').slice(0, 3).join('/')}/login_token?session_key=${token}`;
-            
+
+            // 发送消息到后台脚本进行处理
+            chrome.runtime.sendMessage({
+                action: "autoLogin",
+                token: token,
+                name: name,
+                url: loginUrl
+            });
+        } else {
+            console.log('Current domain is not in the allowed list');
+        }
+    });
+
+    // 初始化UI
+    document.body.appendChild(dropdownContainer);
+    document.body.appendChild(toggleButton);
+
+    // 首次加载时更新卡片（如果面板默认是打开的，或者在 togglePanel 中调用）
+    // updateTokenCards(); // 移到 togglePanel 中首次打开时调用
+}
+
+// 将 updateTokenCards 函数定义移到 initializeUI 外部
+function updateTokenCards() {
+    // 查找 gridContainer
+    const gridContainer = document.querySelector('div[style*="display: grid"]');
+    if (!gridContainer) return; // 如果找不到容器，则不执行
+
+    // 清空现有的卡片
+    gridContainer.innerHTML = '';
+
+    chrome.storage.sync.get(['tokens', 'switchTimes'], function (result) {
+        const tokens = result.tokens || [];
+        const switchTimes = result.switchTimes || {};
+
+        tokens.forEach(token => {
+            const tokenCard = createElem('div', {
+                padding: '15px',
+                borderRadius: '8px',
+                backgroundColor: '#fff',
+                border: '1px solid #ddd',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease'
+            });
+
+            const lastSwitchTime = switchTimes[token.name] || '未使用';
+
+            // 计算时间差
+            let color = '#666'; // 默认颜色
+            if (lastSwitchTime !== '未使用') {
+                const fiveHoursInMs = 5 * 60 * 60 * 1000; // 5小时转换为毫秒
+                const switchTimestamp = new Date(lastSwitchTime).getTime();
+                const currentTime = new Date().getTime();
+
+                // 如果时间差大于5小时显示绿色,否则显示红色
+                color = currentTime - switchTimestamp > fiveHoursInMs ? 'green' : 'red';
+            }
+
+            tokenCard.innerHTML = `
+        <div style="font-weight:bold;color:#333;margin-bottom:5px">${token.name}</div>
+        <div style="font-size:12px;">上次切换: <span style="color:${color}">${lastSwitchTime}</span></div>
+      `;
+
+            tokenCard.addEventListener('mouseover', () => {
+                tokenCard.style.backgroundColor = '#f0f7ff';
+                tokenCard.style.borderColor = '#007bff';
+            });
+
+            tokenCard.addEventListener('mouseout', () => {
+                tokenCard.style.backgroundColor = '#fff';
+                tokenCard.style.borderColor = '#ddd';
+            });
+
+            tokenCard.addEventListener('click', () => {
+                // 更新切换时间
+                const now = new Date().toLocaleString('zh-CN');
+                switchTimes[token.name] = now;
+                chrome.storage.sync.set({ switchTimes: switchTimes });
+
+                // 存储选择并触发登录
+                handleTokenSelection(token.name, token.key);
+                // 关闭面板
+                const dropdownContainer = document.querySelector('div[style*="position: fixed"][style*="background-color: #faf9f5"]');
+                if (dropdownContainer) dropdownContainer.style.display = 'none';
+            });
+
+            gridContainer.appendChild(tokenCard);
+        });
+
+        // 添加"添加新令牌"卡片
+        const addTokenCard = createElem('div', {
+            padding: '15px',
+            borderRadius: '8px',
+            backgroundColor: '#f0f7ff',
+            border: '1px solid #ddd',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+        });
+
+        addTokenCard.innerHTML = `
+      <div style="font-weight:bold;color:#007bff;">+ 添加新令牌</div>
+    `;
+
+        addTokenCard.addEventListener('mouseover', () => {
+            addTokenCard.style.backgroundColor = '#e0f0ff';
+            addTokenCard.style.borderColor = '#007bff';
+        });
+
+        addTokenCard.addEventListener('mouseout', () => {
+            addTokenCard.style.backgroundColor = '#f0f7ff';
+            addTokenCard.style.borderColor = '#ddd';
+        });
+
+        addTokenCard.addEventListener('click', () => {
+            chrome.runtime.sendMessage({
+                action: "openOptions"
+            });
+            // 关闭面板
+            const dropdownContainer = document.querySelector('div[style*="position: fixed"][style*="background-color: #faf9f5"]');
+            if (dropdownContainer) dropdownContainer.style.display = 'none';
+        });
+
+        gridContainer.appendChild(addTokenCard);
+    });
+}
+
+
+function handleTokenSelection(name, token) {
+    if (token === '') {
+        console.log('Empty token selected. No action taken.');
+    } else {
+        autoLogin(name, token);
+    }
+}
+
+function autoLogin(name, token) {
+    const currentURL = window.location.href;
+    let loginUrl;
+
+    // 获取域名列表
+    chrome.storage.sync.get(['domains'], function (result) {
+        const domains = result.domains || []; // 移除默认域名
+        const currentDomain = new URL(currentURL).hostname;
+
+        // 检查当前域名是否在允许列表中
+        if (domains.some(domain => currentDomain === domain)) {
+            loginUrl = `${currentURL.split('/').slice(0, 3).join('/')}/login_token?session_key=${token}`;
+
             // 发送消息到后台脚本进行处理
             chrome.runtime.sendMessage({
                 action: "autoLogin",
@@ -369,11 +522,8 @@ chrome.storage.onChanged.addListener((changes, namespace) => {
         // 如果下拉菜单可见，更新令牌卡片
         const dropdownContainer = document.querySelector('div[style*="position: fixed"][style*="background-color: #faf9f5"]');
         if (dropdownContainer && dropdownContainer.style.display !== 'none') {
-            const gridContainer = dropdownContainer.querySelector('div[style*="display: grid"]');
-            if (gridContainer) {
-                // 重新加载令牌卡片
-                // 这里可以调用一个函数来更新卡片，类似于上面的updateTokenCards
-            }
+            // 直接调用更新函数
+            updateTokenCards();
         }
     }
 });
