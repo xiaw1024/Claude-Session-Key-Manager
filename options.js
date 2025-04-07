@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const addTokenButton = document.getElementById('addTokenButton');
     const tokenList = document.getElementById('tokenList');
     const saveSuccess = document.getElementById('saveSuccess');
+    const reauthorizeButton = document.getElementById('reauthorizeButton');
 
     // 同步相关元素
     const encryptionKeyInput = document.getElementById('encryptionKey');
@@ -417,6 +418,27 @@ document.addEventListener('DOMContentLoaded', function () {
     domainInput.addEventListener('keypress', function (e) {
         if (e.key === 'Enter') {
             addDomain();
+        }
+    });
+
+    // 重新授权按钮点击事件
+    reauthorizeButton.addEventListener('click', function() {
+        if (confirm('确定要重新授权扩展吗？这将清除所有保存的令牌和设置，需要重新进行授权和配置。')) {
+            // 清除授权相关的存储
+            chrome.storage.sync.remove(['authorized'], function() {
+                // 通知background script重新进行授权
+                chrome.runtime.sendMessage({ action: 'reauthorize' }, function(response) {
+                    if (response && response.success) {
+                        showSyncStatus('已触发重新授权流程，请刷新页面完成授权', 'info');
+                        // 3秒后刷新页面
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 3000);
+                    } else {
+                        showSyncStatus('重新授权失败，请重试', 'error');
+                    }
+                });
+            });
         }
     });
 

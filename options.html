@@ -248,6 +248,29 @@
         .add-button:hover {
             background-color: #218838;
         }
+
+        .reauthorize-section {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+        }
+
+        .reauthorize-button {
+            padding: 10px 15px;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            width: 100%;
+        }
+
+        .reauthorize-button:hover {
+            background-color: #c82333;
+        }
     </style>
 </head>
 
@@ -256,6 +279,12 @@
 
     <div id="saveSuccess" class="save-success">
         保存成功!
+    </div>
+
+    <div class="reauthorize-section">
+        <h2>重新授权</h2>
+        <p>如果您需要重新进行Chrome扩展授权，请点击下方按钮：</p>
+        <button id="reauthorizeButton" class="reauthorize-button">重新授权扩展</button>
     </div>
 
     <div class="sync-container">
