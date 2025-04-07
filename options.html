@@ -33,7 +33,7 @@
 
         .token-form {
             display: grid;
-            grid-template-columns: 1fr 2fr auto;
+            grid-template-columns: 1fr 2fr auto auto;
             gap: 10px;
             margin-bottom: 20px;
             align-items: center;
@@ -54,10 +54,20 @@
             border-radius: 4px;
             cursor: pointer;
             font-size: 14px;
+            white-space: nowrap;
         }
 
         .token-form button:hover {
             background-color: #218838;
+        }
+
+        #cancelButton {
+            background-color: #6c757d;
+            margin-left: 0;
+        }
+
+        #cancelButton:hover {
+            background-color: #5a6268;
         }
 
         .token-list {
@@ -219,6 +229,25 @@
             color: #004085;
             border: 1px solid #b8daff;
         }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .add-button {
+            padding: 10px 15px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        .add-button:hover {
+            background-color: #218838;
+        }
     </style>
 </head>
 
@@ -244,15 +273,25 @@
 
     <div class="tokens-container">
         <h2>管理令牌</h2>
-
         <div class="token-form">
             <input type="text" id="tokenName" placeholder="名称（如: Claude Pro）" />
             <input type="text" id="tokenKey" placeholder="会话密钥 (sk-ant-...)" />
             <button id="addTokenButton">添加令牌</button>
         </div>
-
         <div id="tokenList" class="token-list">
             <!-- 令牌列表将由JavaScript动态填充 -->
+            <div class="empty-state">加载中...</div>
+        </div>
+    </div>
+
+    <div class="tokens-container">
+        <h2>域名管理</h2>
+        <div class="token-form">
+            <input type="text" id="domainInput" placeholder="输入域名（例如：example.com）" />
+            <button id="addDomainButton">添加域名</button>
+        </div>
+        <div id="domainList" class="token-list">
+            <!-- 域名列表将由JavaScript动态填充 -->
             <div class="empty-state">加载中...</div>
         </div>
     </div>

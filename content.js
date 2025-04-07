@@ -14,6 +14,11 @@ chrome.storage.sync.get(['buttonPosition'], function (result) {
         buttonPosition = result.buttonPosition;
         initializeUI();
     } else {
+        // 设置默认位置为右下角，距离边缘30px
+        buttonPosition = {
+            left: window.innerWidth - 74, // 44px按钮宽度 + 30px边距
+            bottom: 30
+        };
         initializeUI();
     }
 });
@@ -28,8 +33,8 @@ function initializeUI() {
         color: '#007bff',
         cursor: 'move',
         position: 'fixed',
-        bottom: `${buttonPosition.bottom}px`,
-        left: `${buttonPosition.left}px`,
+        bottom: '30px',
+        right: '10px',
         zIndex: '10000',
         display: 'flex',
         alignItems: 'center',
@@ -197,8 +202,18 @@ function initializeUI() {
         fontSize: '12px',
         color: '#666'
     });
-    infoSection.innerHTML = '双击按钮展开/收起面板 • 拖拽按钮调整位置';
+    infoSection.innerHTML = '双击按钮展开/收起面板 • 拖拽按钮调整位置 • Win+C 快捷键切换';
     dropdownContainer.appendChild(infoSection);
+
+    // 添加切换面板的函数
+    function togglePanel() {
+        if (dropdownContainer.style.display === 'none') {
+            dropdownContainer.style.display = 'flex';
+            updateTokenCards(); // 更新令牌卡片
+        } else {
+            dropdownContainer.style.display = 'none';
+        }
+    }
 
     let isDragging = false;
     let startX, startY;
@@ -221,23 +236,17 @@ function initializeUI() {
 
         e.preventDefault();
 
-        const newLeft = e.clientX - startX;
         const newTop = e.clientY - startY;
-
-        // 从顶部计算底部位置
         const bottom = window.innerHeight - newTop - toggleButton.offsetHeight;
 
-        // 确保按钮在窗口边界内
-        const maxLeft = window.innerWidth - toggleButton.offsetWidth;
-        const maxBottom = window.innerHeight - toggleButton.offsetHeight;
+        // 确保按钮在窗口边界内，保持10px的边距
+        const maxBottom = window.innerHeight - toggleButton.offsetHeight - 10;
+        buttonBottom = Math.min(Math.max(bottom, 10), maxBottom);
 
-        buttonLeft = Math.min(Math.max(newLeft, 0), maxLeft);
-        buttonBottom = Math.min(Math.max(bottom, 0), maxBottom);
-
-        // 更新按钮位置
-        toggleButton.style.left = `${buttonLeft}px`;
+        // 更新按钮位置，只更新垂直位置
         toggleButton.style.bottom = `${buttonBottom}px`;
-        toggleButton.style.top = 'auto';
+        toggleButton.style.right = '10px';
+        toggleButton.style.left = 'auto';
     }
 
     function onMouseUp() {
@@ -248,7 +257,7 @@ function initializeUI() {
             // 保存位置到存储
             chrome.storage.sync.set({
                 buttonPosition: {
-                    left: buttonLeft,
+                    right: 10,
                     bottom: buttonBottom
                 }
             });
@@ -262,19 +271,21 @@ function initializeUI() {
         const timeDiff = clickTime - lastClickTime;
 
         if (timeDiff < 300) { // 双击阈值
-            if (dropdownContainer.style.display === 'none') {
-                dropdownContainer.style.display = 'flex';
-                updateTokenCards(); // 更新令牌卡片
-            } else {
-                dropdownContainer.style.display = 'none';
-            }
+            togglePanel();
             e.stopPropagation();
         }
 
         lastClickTime = clickTime;
     });
 
-
+    // 添加键盘快捷键监听
+    document.addEventListener('keydown', (e) => {
+        // 检查是否按下 Win+C
+        if (e.key.toLowerCase() === 'c' && (e.metaKey || e.ctrlKey)) {
+            togglePanel();
+            e.preventDefault(); // 阻止默认行为
+        }
+    });
 
     // 添加拖动事件
     toggleButton.addEventListener('mousedown', onMouseDown);
@@ -286,6 +297,24 @@ function initializeUI() {
         if (!dropdownContainer.contains(e.target) && e.target !== toggleButton) {
             dropdownContainer.style.display = 'none';
         }
+    });
+
+    // 添加窗口大小变化的监听器
+    window.addEventListener('resize', () => {
+        // 确保按钮始终在右侧
+        toggleButton.style.right = '10px';
+        toggleButton.style.left = 'auto';
+        
+        // 更新保存的位置
+        buttonPosition = {
+            right: 10,
+            bottom: buttonBottom
+        };
+        
+        // 保存新的位置到存储
+        chrome.storage.sync.set({
+            buttonPosition: buttonPosition
+        });
     });
 
     // 初始化UI
@@ -305,20 +334,25 @@ function autoLogin(name, token) {
     const currentURL = window.location.href;
     let loginUrl;
 
-    if (currentURL.startsWith('https://ccc.008778.xyz/')) {
-        loginUrl = `https://ccc.008778.xyz/login_token?session_key=${token}`;
-    } else if (currentURL.startsWith('https://ccc.008778.xyz/')) {
-        loginUrl = `https://ccc.008778.xyz/login_token?session_key=${token}`;
-    } else {
-        loginUrl = `https://ccc.008778.xyz/login_token?session_key=${token}`;
-    }
-
-    // 发送消息到后台脚本进行处理
-    chrome.runtime.sendMessage({
-        action: "autoLogin",
-        token: token,
-        name: name,
-        url: loginUrl
+    // 获取域名列表
+    chrome.storage.sync.get(['domains'], function(result) {
+        const domains = result.domains || []; // 移除默认域名
+        const currentDomain = new URL(currentURL).hostname;
+        
+        // 检查当前域名是否在允许列表中
+        if (domains.some(domain => currentDomain === domain)) {
+            loginUrl = `${currentURL.split('/').slice(0, 3).join('/')}/login_token?session_key=${token}`;
+            
+            // 发送消息到后台脚本进行处理
+            chrome.runtime.sendMessage({
+                action: "autoLogin",
+                token: token,
+                name: name,
+                url: loginUrl
+            });
+        } else {
+            console.log('Current domain is not in the allowed list');
+        }
     });
 }
 

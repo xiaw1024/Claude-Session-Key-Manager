@@ -10,7 +10,7 @@
 // 后台脚本，主要用于处理扩展生命周期事件和消息传递
 chrome.runtime.onInstalled.addListener(() => {
     // 初始化存储
-    chrome.storage.sync.get(['tokens', 'buttonPosition', 'switchTimes'], function (result) {
+    chrome.storage.sync.get(['tokens', 'buttonPosition', 'switchTimes', 'domains'], function (result) {
         if (!result.tokens) {
             chrome.storage.sync.set({ tokens: [] });
         }
@@ -26,6 +26,10 @@ chrome.runtime.onInstalled.addListener(() => {
 
         if (!result.switchTimes) {
             chrome.storage.sync.set({ switchTimes: {} });
+        }
+
+        if (!result.domains) {
+            chrome.storage.sync.set({ domains: [] });
         }
     });
 });

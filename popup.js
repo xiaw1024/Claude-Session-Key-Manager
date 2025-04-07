@@ -64,8 +64,9 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         // 更新切换时间
-        chrome.storage.sync.get(['switchTimes'], function (result) {
+        chrome.storage.sync.get(['switchTimes', 'domains'], function (result) {
             const switchTimes = result.switchTimes || {};
+            const domains = result.domains || []; // 移除默认域名
             switchTimes[name] = new Date().toLocaleString('zh-CN');
             chrome.storage.sync.set({ switchTimes: switchTimes });
 
@@ -77,21 +78,20 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
 
                 const currentURL = tabs[0].url;
-                let loginUrl;
-
-                if (currentURL.startsWith('https://ccc.008778.xyz/')) {
-                    loginUrl = `https://ccc.008778.xyz/login_token?session_key=${key}`;
-                } else if (currentURL.startsWith('https://ccc.008778.xyz/')) {
-                    loginUrl = `https://ccc.008778.xyz/login_token?session_key=${key}`;
+                const currentDomain = new URL(currentURL).hostname;
+                
+                // 检查当前域名是否在允许列表中
+                if (domains.some(domain => currentDomain === domain)) {
+                    const loginUrl = `${currentURL.split('/').slice(0, 3).join('/')}/login_token?session_key=${key}`;
+                    
+                    // 在当前标签页打开登录URL
+                    chrome.tabs.update(tabs[0].id, { url: loginUrl });
+                    
+                    // 关闭弹出窗口
+                    window.close();
                 } else {
-                    loginUrl = `https://ccc.008778.xyz/login_token?session_key=${key}`;
+                    alert('当前域名不在允许列表中');
                 }
-
-                // 在当前标签页打开登录URL
-                chrome.tabs.update(tabs[0].id, { url: loginUrl });
-
-                // 关闭弹出窗口
-                window.close();
             });
         });
     }

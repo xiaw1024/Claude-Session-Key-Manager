@@ -14,7 +14,20 @@ document.addEventListener('DOMContentLoaded', function () {
     const restoreFromDriveButton = document.getElementById('restoreFromDrive');
     const syncStatus = document.getElementById('syncStatus');
 
+    // 添加取消按钮
+    const cancelButton = document.createElement('button');
+    cancelButton.id = 'cancelButton';
+    cancelButton.textContent = '取消修改';
+    cancelButton.style.display = 'none';
+    addTokenButton.parentNode.insertBefore(cancelButton, addTokenButton.nextSibling);
+
     let editingIndex = -1; // 当前编辑的令牌索引，-1表示添加新令牌
+
+    // 添加域名相关元素
+    const domainInput = document.getElementById('domainInput');
+    const addDomainButton = document.getElementById('addDomainButton');
+    const domainList = document.getElementById('domainList');
+    let editingDomainIndex = -1;
 
     // 显示保存成功提示
     function showSaveSuccess() {
@@ -89,6 +102,53 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // 加载域名列表
+    function loadDomains() {
+        chrome.storage.sync.get(['domains'], function (result) {
+            const domains = result.domains || [];
+
+            if (domains.length === 0) {
+                domainList.innerHTML = `
+                    <div class="empty-state">
+                        没有配置的域名<br>
+                        使用上方表单添加
+                    </div>
+                `;
+                return;
+            }
+
+            domainList.innerHTML = '';
+
+            domains.forEach((domain, index) => {
+                const domainItem = document.createElement('div');
+                domainItem.className = 'token-item';
+
+                domainItem.innerHTML = `
+                    <div class="token-name">${domain}</div>
+                    <div class="token-key"></div>
+                    <div class="token-actions">
+                        <button class="edit-button">编辑</button>
+                        <button class="delete-button">删除</button>
+                    </div>
+                `;
+
+                // 添加编辑按钮事件
+                const editButton = domainItem.querySelector('.edit-button');
+                editButton.addEventListener('click', function () {
+                    editDomain(index, domain);
+                });
+
+                // 添加删除按钮事件
+                const deleteButton = domainItem.querySelector('.delete-button');
+                deleteButton.addEventListener('click', function () {
+                    deleteDomain(index);
+                });
+
+                domainList.appendChild(domainItem);
+            });
+        });
+    }
+
     // 掩码显示令牌
     function maskToken(token) {
         if (!token) return '';
@@ -147,10 +207,20 @@ document.addEventListener('DOMContentLoaded', function () {
         tokenKeyInput.value = token.key;
         addTokenButton.textContent = '保存修改';
         editingIndex = index;
+        cancelButton.style.display = 'inline-block';
 
         // 滚动到表单
         tokenNameInput.scrollIntoView({ behavior: 'smooth' });
         tokenNameInput.focus();
+    }
+
+    // 取消编辑
+    function cancelEdit() {
+        tokenNameInput.value = '';
+        tokenKeyInput.value = '';
+        addTokenButton.textContent = '添加令牌';
+        editingIndex = -1;
+        cancelButton.style.display = 'none';
     }
 
     // 删除令牌
@@ -245,6 +315,9 @@ document.addEventListener('DOMContentLoaded', function () {
     // 添加/保存按钮点击事件
     addTokenButton.addEventListener('click', addToken);
 
+    // 取消按钮点击事件
+    cancelButton.addEventListener('click', cancelEdit);
+
     // 表单回车提交
     tokenKeyInput.addEventListener('keypress', function (e) {
         if (e.key === 'Enter') {
@@ -252,6 +325,103 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    // 添加新域名
+    function addDomain() {
+        const domain = domainInput.value.trim();
+
+        if (!domain) {
+            alert('域名不能为空');
+            return;
+        }
+
+        // 简单的域名格式验证
+        if (!/^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$/.test(domain)) {
+            alert('请输入有效的域名格式');
+            return;
+        }
+
+        chrome.storage.sync.get(['domains'], function (result) {
+            const domains = result.domains || [];
+
+            // 检查是否已存在相同域名
+            if (domains.includes(domain)) {
+                alert(`域名 "${domain}" 已存在`);
+                return;
+            }
+
+            if (editingDomainIndex === -1) {
+                // 添加新域名
+                domains.push(domain);
+            } else {
+                // 更新现有域名
+                domains[editingDomainIndex] = domain;
+                editingDomainIndex = -1;
+            }
+
+            chrome.storage.sync.set({ domains }, function () {
+                // 重置表单
+                domainInput.value = '';
+                addDomainButton.textContent = '添加域名';
+
+                // 重新加载域名列表
+                loadDomains();
+
+                // 显示保存成功
+                showSaveSuccess();
+            });
+        });
+    }
+
+    // 编辑域名
+    function editDomain(index, domain) {
+        domainInput.value = domain;
+        addDomainButton.textContent = '保存修改';
+        editingDomainIndex = index;
+
+        // 滚动到输入框
+        domainInput.scrollIntoView({ behavior: 'smooth' });
+        domainInput.focus();
+    }
+
+    // 删除域名
+    function deleteDomain(index) {
+        if (!confirm('确定要删除此域名吗？')) {
+            return;
+        }
+
+        chrome.storage.sync.get(['domains'], function (result) {
+            const domains = result.domains || [];
+            domains.splice(index, 1);
+
+            chrome.storage.sync.set({ domains }, function () {
+                // 如果正在编辑被删除的域名，重置表单
+                if (editingDomainIndex === index) {
+                    domainInput.value = '';
+                    addDomainButton.textContent = '添加域名';
+                    editingDomainIndex = -1;
+                }
+
+                // 重新加载域名列表
+                loadDomains();
+
+                // 显示保存成功
+                showSaveSuccess();
+            });
+        });
+    }
+
+    // 添加域名按钮点击事件
+    addDomainButton.addEventListener('click', addDomain);
+
+    // 域名输入框回车事件
+    domainInput.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            addDomain();
+        }
+    });
+
     // 初始加载令牌
     loadTokens();
+    // 初始加载域名列表
+    loadDomains();
 });

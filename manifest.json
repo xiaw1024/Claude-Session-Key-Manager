@@ -34,8 +34,7 @@
     "content_scripts": [
         {
             "matches": [
-                "https://ccc.008778.xyz/*",
-                "https://ccc.008778.xyz/*"
+                "<all_urls>"
             ],
             "js": [
                 "content.js"
