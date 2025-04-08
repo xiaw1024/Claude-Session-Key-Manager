@@ -8,9 +8,9 @@
         "activeTab",
         "identity",
         "identity.email",
-        "tabs",
-        "cookies"
+        "tabs"
     ],
+    "key":"MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAziBaU8Ti9+Hk1GnqT+AVQW/bMXZh3wj6O0TgaW6oDNc6d1/Xi6xaNZ7uQOF5UKE8682W1uZZJCn4/rCKdIso1bzG4qT4H26Ds2Xz7ktOfP9DCrcQ/nkQHkT/EJQ6QIJPFKP6DqZ6lWO55NAGOjTjyqSx8dZnVsv8RK1QSyBzXFVfwkSENP0BmhVoQB/Lsy93BzSo6H4RoRIPihuTM7rPlBeFvPwsQiE/7OBHHeuwg/9PamyQjGijYG8bmBjNjJrqeXkcWBXAH3w5q/RK88NDBWjfcuWhG3MKtGvI4H2zXHoE3J4U0zmQkhfug1lONuWae/xcmagJiSUibctjixyAoQIDAQAB",
     "host_permissions": [
         "*://*/*",
         "https://*.anthropic.com/*"
