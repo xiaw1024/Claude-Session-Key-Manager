@@ -287,8 +287,8 @@ function initializeUI() {
 
     // 添加键盘快捷键监听
     document.addEventListener('keydown', (e) => {
-        // 检查是否按下 Win+C
-        if (e.key.toLowerCase() === 'c' && (e.metaKey || e.ctrlKey)) {
+        // 只允许 Win+C 或 Command+C，不允许 Ctrl+C
+        if (e.key.toLowerCase() === 'c' && e.metaKey && !e.ctrlKey) {
             togglePanel();
             e.preventDefault(); // 阻止默认行为
         }
